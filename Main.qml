@@ -257,13 +257,148 @@ ApplicationWindow {
         Rectangle { 
             anchors.fill: parent
             color: "transparent"
-            Text {
-                anchors.centerIn: parent
-                text: "SUCCESSFUL: Переход к анкете"
-                color: coreVisual.messageOur
-                font.family: coreTypography.fontFamilyMain
-                font.pixelSize: 32
-                font.bold: true
+            ScrollView {
+                id: regScrollView
+                anchors.fill: parent
+                contentWidth: availableWidth
+                clip: true
+                Item {
+                    width: regScrollView.availableWidth
+                    implicitHeight: formLayout.implicitHeight + 80
+                    ColumnLayout {
+                        id: formLayout
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        width: Math.min(Math.max(root.width * 0.38, 420), 650)
+                        spacing: 18
+
+                        Item {
+                            implicitHeight: 40 
+                        }
+                        Text {
+                        text: "Введите данные для регистрации"
+                        color: coreVisual.messageOur
+                        font.family: coreTypography.fontFamilyMain
+                        font.pixelSize: 22
+                        font.bold: true
+                        Layout.alignment: Qt.AlignHCenter
+                    }
+
+                        Text {
+                            text: "Учетные данные будут зашифрованы локальным мастер-ключом ОС"
+                            color: coreVisual.messageTheir
+                            font.family: coreTypography.fontFamilyMain
+                            font.pixelSize: 13
+                            Layout.alignment: Qt.AlignHCenter
+                        }
+
+                        Text {
+                            text: "Имя пользователя(Username)"
+                            color: coreVisual.messageOur
+                            font.family: coreTypography.fontFamilyMain
+                            font.pixelSize: 12
+                            font.bold: true
+                        }
+                        
+                        TextField {
+                        id: usernameField
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 46
+                        placeholderText:  "Ваш юзернейм здесь"
+                        placeholderTextColor: coreVisual.messageTheir
+                        color: coreVisual.textMain
+                        font.family: coreTypography.fontFamilyMain
+                        font.pixelSize: 14
+                        maximumLength: 31
+
+                        validator: RegularExpressionValidator {
+                        regularExpression: /^[a-zA-Z0-9_]{3,31}$/
+                    }
+                        background: Rectangle {
+                            color: coreVisual.bgPanel
+                            radius: coreVisual.baseRadius
+                            border.color: usernameField.activeFocus ? coreVisual.messageOur : "transparent"
+                            border.width: 1
+                        }
+                    }
+                    // Заголовок пароля
+                        Text {
+                            text: "Мастер-пароль *"
+                            color: coreVisual.messageOur
+                            font.family: coreTypography.fontFamilyMain
+                            font.pixelSize: 12
+                            font.bold: true
+                            Layout.topMargin: 4
+                        }
+
+                        // Поле ввода мастер-пароля
+                        TextField {
+                            id: passwordField
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 46
+                            placeholderText: "Минимум 8 символов"
+                            placeholderTextColor: coreVisual.messageTheir
+                            color: coreVisual.textMain
+                            font.family: coreTypography.fontFamilyMain
+                            font.pixelSize: 14
+                            echoMode: TextInput.Password
+                            passwordCharacter: "•"
+
+                            background: Rectangle {
+                                color: coreVisual.bgPanel
+                                radius: coreVisual.baseRadius
+                                border.color: passwordField.activeFocus ? coreVisual.messageOur : "transparent"
+                                border.width: 1
+                            }
+                        }
+
+                        // Заголовок подтверждения
+                        Text {
+                            text: "Подтверждение пароля *"
+                            color: coreVisual.messageOur
+                            font.family: coreTypography.fontFamilyMain
+                            font.pixelSize: 12
+                            font.bold: true
+                            Layout.topMargin: 4
+                        }
+
+                        // Поле повторного ввода пароля
+                        TextField {
+                            id: confirmPasswordField
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 46
+                            placeholderText: "Повторите мастер-пароль"
+                            placeholderTextColor: coreVisual.messageTheir
+                            color: coreVisual.textMain
+                            font.family: coreTypography.fontFamilyMain
+                            font.pixelSize: 14
+                            echoMode: TextInput.Password
+                            passwordCharacter: "•"
+
+                            background: Rectangle {
+                                color: coreVisual.bgPanel
+                                radius: coreVisual.baseRadius
+                                border.color: {
+                                    if (confirmPasswordField.activeFocus) {
+                                        return (confirmPasswordField.text === passwordField.text && passwordField.text.length >= 8) 
+                                               ? coreVisual.messageOur 
+                                               : "#EF4444"
+                                    }
+                                    return "transparent"
+                                }
+                                border.width: 1
+                            }
+                        }
+
+                        // Индикатор несовпадения паролей
+                        Text {
+                            text: "Пароли не совпадают или длина меньше 8 символов"
+                            color: "#EF4444"
+                            font.family: coreTypography.fontFamilyMain
+                            font.pixelSize: 11
+                            visible: confirmPasswordField.text !== "" && 
+                                     (confirmPasswordField.text !== passwordField.text || passwordField.text.length < 8)
+                        }
+                }}
             }
         }
     }
