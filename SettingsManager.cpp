@@ -7,6 +7,7 @@
 #include <QStandardPaths>
 #include <QDebug>
 #include <QFileInfo>
+#include <QJsonArray>
 
 SettingsManager::SettingsManager(QObject *parent) : QObject(parent){
 
@@ -72,4 +73,44 @@ void SettingsManager::verifyBackupPath(const QString &path) {
     }
     m_pendingBackupPath = path;
     emit backupPathValid();
+}
+bool SettingsManager::createAiAgent(const QString &agentName, const QString &baseUrl, const QString &apiKey, const QString &modelName){
+    QDir agentsDir(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/aiagents");
+    if(!agentsDir.exists()){
+        agentsDir.mkpath(".");
+    }
+    QJsonObject agentObj;
+    agentObj["agentName"] = agentName;
+    agentObj["baseUrl"] = baseUrl;
+    agentObj["apiKey"] = apiKey;
+    agentObj["modelName"] = modelName;
+    agentObj["messages"] = QJsonArray();
+    QFile file(agentsDir.filePath(agentName + ".json"));
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+        return false;
+    }
+    QJsonDocument doc(agentObj);
+    file.write(doc.toJson(QJsonDocument::Indented));
+    file.close();
+    return true;
+}
+QVariantList SettingsManager::loadAiAgents() {
+    QVariantList agentsList;
+    QDir agentsDir(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/aiagents");
+    if (!agentsDir.exists()) {
+        return agentsList;
+    }
+    // Ищем только файлы с расширением .json
+    QStringList files = agentsDir.entryList(QStringList() << "*.json", QDir::Files);
+    for (const QString &fileName : files) {
+        QFile file(agentsDir.filePath(fileName));
+        if (file.open(QIODevice::ReadOnly)) {
+            QJsonDocument doc = QJsonDocument::fromJson(file.readAll());
+            if (doc.isObject()) {
+                agentsList.append(doc.object().toVariantMap());
+            }
+            file.close();
+        }
+    }
+    return agentsList;
 }
