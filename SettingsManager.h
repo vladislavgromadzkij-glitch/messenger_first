@@ -10,6 +10,8 @@ class SettingsManager : public QObject
   public:
   explicit SettingsManager(QObject *parent = nullptr);
   Q_INVOKABLE void verifyBackupPath(const QString &path);
+  Q_INVOKABLE bool createAiAgent(const QString &agentName, const QString &baseUrl, const QString &apiKey, const QString &modelName);
+  Q_INVOKABLE QVariantList loadAiAgents();
   ~SettingsManager() override;
   //static - потому что мы хотим вызывать эти методы без создания экземпляра класса SettingsManager. Они будут использоваться для проверки наличия сохраненных профилей и настроек, а также для исправления настроек при необходимости.
   // Эти методы не зависят от состояния конкретного объекта SettingsManager, поэтому их можно вызывать напрямую через имя класса.
