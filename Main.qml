@@ -18,6 +18,7 @@ ApplicationWindow {
         id: coreVisual
         property string presetId: "theme_orbital_green" 
         property color bgMain: "#0B0F19"
+        property color bgHeader: "#111726"
         property color bgPanel: "#161D2B"
         property color messageOur: "#10B981"
         property color messageTheir: "#64748B"
@@ -45,15 +46,23 @@ ApplicationWindow {
         property string activeShaderPath: ""
     }
 
-    //custom frameless window header
+    // Верхняя системная шапка окна (выделена цветом и нижней границей)
     Rectangle {
         id: customHeader
         width: parent.width
         height: 32 
-        color: "transparent" 
+        color: coreVisual.bgHeader
         z: 10
 
-        //handles window drag events
+        // Аппаратная линия разделения шапки и рабочей области (1px)
+        Rectangle {
+            width: parent.width
+            height: 1
+            anchors.bottom: parent.bottom
+            color: "#1E293B"
+        }
+
+        // Перехват перетаскивания окна средствами ОС
         DragHandler {
             onActiveChanged: if (active) root.startSystemMove()
         }
@@ -122,28 +131,30 @@ ApplicationWindow {
         }
     }
 
-    StackView { //this object navigates between pages
+    StackView {
         id: windowStack 
         anchors.fill: parent 
 
-        Rectangle { //basic background
+        Rectangle {
             anchors.fill: parent
             color: coreVisual.bgMain
-            z: -1 //we make it always behind other elements
+            z: -1
         }
     }
 
+    // ЭКРАН 1: Выбор директории резервного копирования
     Component {
         id: backupPathScreen
         Rectangle {          
             anchors.fill: parent
             color: "transparent"
+
             FolderDialog {
                 id: backupFolderDialog
                 title: "Choose a folder for your backup file"
                 onAccepted: {
                     var rawPath = selectedFolder.toString()
-                    if(Qt.platform.os === "windows"){
+                    if (Qt.platform.os === "windows") {
                         rawPath = rawPath.replace("file:///", "")
                     } else {
                         rawPath = rawPath.replace("file://", "")
@@ -218,12 +229,12 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 50
                     Layout.topMargin: 15
-                    enabled: !isChecking && pathField.text !== ""
+                    enabled: !root.isChecking && pathField.text !== ""
                     
                     onClicked: {
-                        root.isChecking = true // ui block
-                        root.errorMsg = ""     //delete old errors
-                        settingsManager.verifyBackupPath(pathField.text) //send info to settings manager
+                        root.isChecking = true
+                        root.errorMsg = ""
+                        settingsManager.verifyBackupPath(pathField.text)
                     }            
                     
                     contentItem: Text {
@@ -239,6 +250,33 @@ ApplicationWindow {
                         radius: coreVisual.baseRadius
                     }
                 }
+
+                // Кнопка мгновенного перехода в окно чатов без регистрации
+                Button {
+                    text: "Пропустить (Перейти сразу в чаты)"
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 44
+
+                    onClicked: {
+                        windowStack.push(mainChatScreen)
+                    }
+
+                    contentItem: Text {
+                        text: parent.text
+                        color: coreVisual.textMain
+                        font.family: coreTypography.fontFamilyMain
+                        font.pixelSize: 13
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+
+                    background: Rectangle {
+                        color: coreVisual.bgPanel
+                        radius: coreVisual.baseRadius
+                        border.color: coreVisual.messageTheir
+                        border.width: 1
+                    }
+                }
                 
                 Text {
                     text: root.errorMsg
@@ -252,19 +290,23 @@ ApplicationWindow {
         }
     }
 
+    // ЭКРАН 2: Анкета регистрации профиля
     Component {
         id: registrationFormScreen
         Rectangle { 
             anchors.fill: parent
             color: "transparent"
+
             ScrollView {
                 id: regScrollView
                 anchors.fill: parent
                 contentWidth: availableWidth
                 clip: true
+
                 Item {
                     width: regScrollView.availableWidth
                     implicitHeight: formLayout.implicitHeight + 80
+
                     ColumnLayout {
                         id: formLayout
                         anchors.horizontalCenter: parent.horizontalCenter
@@ -274,14 +316,15 @@ ApplicationWindow {
                         Item {
                             implicitHeight: 40 
                         }
+
                         Text {
-                        text: "Введите данные для регистрации"
-                        color: coreVisual.messageOur
-                        font.family: coreTypography.fontFamilyMain
-                        font.pixelSize: 22
-                        font.bold: true
-                        Layout.alignment: Qt.AlignHCenter
-                    }
+                            text: "Введите данные для регистрации"
+                            color: coreVisual.messageOur
+                            font.family: coreTypography.fontFamilyMain
+                            font.pixelSize: 22
+                            font.bold: true
+                            Layout.alignment: Qt.AlignHCenter
+                        }
 
                         Text {
                             text: "Учетные данные будут зашифрованы локальным мастер-ключом ОС"
@@ -292,7 +335,7 @@ ApplicationWindow {
                         }
 
                         Text {
-                            text: "Имя пользователя(Username)"
+                            text: "Имя пользователя (Username) *"
                             color: coreVisual.messageOur
                             font.family: coreTypography.fontFamilyMain
                             font.pixelSize: 12
@@ -300,27 +343,28 @@ ApplicationWindow {
                         }
                         
                         TextField {
-                        id: usernameField
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 46
-                        placeholderText:  "Ваш юзернейм здесь"
-                        placeholderTextColor: coreVisual.messageTheir
-                        color: coreVisual.textMain
-                        font.family: coreTypography.fontFamilyMain
-                        font.pixelSize: 14
-                        maximumLength: 31
+                            id: usernameField
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 46
+                            placeholderText: "Ваш юзернейм здесь"
+                            placeholderTextColor: coreVisual.messageTheir
+                            color: coreVisual.textMain
+                            font.family: coreTypography.fontFamilyMain
+                            font.pixelSize: 14
+                            maximumLength: 31
 
-                        validator: RegularExpressionValidator {
-                        regularExpression: /^[a-zA-Z0-9_]{3,31}$/
-                    }
-                        background: Rectangle {
-                            color: coreVisual.bgPanel
-                            radius: coreVisual.baseRadius
-                            border.color: usernameField.activeFocus ? coreVisual.messageOur : "transparent"
-                            border.width: 1
+                            validator: RegularExpressionValidator {
+                                regularExpression: /^[a-zA-Z0-9_]{3,31}$/
+                            }
+
+                            background: Rectangle {
+                                color: coreVisual.bgPanel
+                                radius: coreVisual.baseRadius
+                                border.color: usernameField.activeFocus ? coreVisual.messageOur : "transparent"
+                                border.width: 1
+                            }
                         }
-                    }
-                    // Заголовок пароля
+
                         Text {
                             text: "Мастер-пароль *"
                             color: coreVisual.messageOur
@@ -330,7 +374,6 @@ ApplicationWindow {
                             Layout.topMargin: 4
                         }
 
-                        // Поле ввода мастер-пароля
                         TextField {
                             id: passwordField
                             Layout.fillWidth: true
@@ -351,7 +394,6 @@ ApplicationWindow {
                             }
                         }
 
-                        // Заголовок подтверждения
                         Text {
                             text: "Подтверждение пароля *"
                             color: coreVisual.messageOur
@@ -361,7 +403,6 @@ ApplicationWindow {
                             Layout.topMargin: 4
                         }
 
-                        // Поле повторного ввода пароля
                         TextField {
                             id: confirmPasswordField
                             Layout.fillWidth: true
@@ -389,7 +430,6 @@ ApplicationWindow {
                             }
                         }
 
-                        // Индикатор несовпадения паролей
                         Text {
                             text: "Пароли не совпадают или длина меньше 8 символов"
                             color: "#EF4444"
@@ -398,14 +438,609 @@ ApplicationWindow {
                             visible: confirmPasswordField.text !== "" && 
                                      (confirmPasswordField.text !== passwordField.text || passwordField.text.length < 8)
                         }
-                }}
+
+                        Text {
+                            text: "Электронная почта (Email) *"
+                            color: coreVisual.messageOur
+                            font.family: coreTypography.fontFamilyMain
+                            font.pixelSize: 12
+                            font.bold: true
+                            Layout.topMargin: 4
+                        }
+
+                        TextField {
+                            id: emailField
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 46
+                            placeholderText: "user@domain.org"
+                            placeholderTextColor: coreVisual.messageTheir
+                            color: coreVisual.textMain
+                            font.family: coreTypography.fontFamilyMain
+                            font.pixelSize: 14
+                            maximumLength: 63
+
+                            validator: RegularExpressionValidator {
+                                regularExpression: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,63}$/
+                            }
+
+                            background: Rectangle {
+                                color: coreVisual.bgPanel
+                                radius: coreVisual.baseRadius
+                                border.color: {
+                                    if (!emailField.activeFocus) return "transparent"
+                                    return emailField.acceptableInput ? coreVisual.messageOur : "#EF4444"
+                                }
+                                border.width: 1
+                            }
+                        }
+
+                        Text {
+                            text: "Номер телефона (По желанию)"
+                            color: coreVisual.messageTheir
+                            font.family: coreTypography.fontFamilyMain
+                            font.pixelSize: 12
+                            font.bold: true
+                            Layout.topMargin: 4
+                        }
+
+                        TextField {
+                            id: phoneField
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 46
+                            placeholderText: "+79001234567 (необязательно)"
+                            placeholderTextColor: coreVisual.messageTheir
+                            color: coreVisual.textMain
+                            font.family: coreTypography.fontFamilyMain
+                            font.pixelSize: 14
+                            maximumLength: 19
+
+                            validator: RegularExpressionValidator {
+                                regularExpression: /^\+?[0-9]{7,19}$/
+                            }
+
+                            background: Rectangle {
+                                color: coreVisual.bgPanel
+                                radius: coreVisual.baseRadius
+                                border.color: {
+                                    if (!phoneField.activeFocus || phoneField.text === "") return "transparent"
+                                    return phoneField.acceptableInput ? coreVisual.messageOur : "#EF4444"
+                                }
+                                border.width: 1
+                            }
+                        }
+
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.topMargin: 8
+                            implicitHeight: nodeCardLayout.implicitHeight + 24
+                            color: coreVisual.bgPanel
+                            radius: coreVisual.baseRadius
+                            border.color: nodeSwitch.checked ? coreVisual.messageOur : "transparent"
+                            border.width: 1
+
+                            ColumnLayout {
+                                id: nodeCardLayout
+                                anchors.fill: parent
+                                anchors.margins: 12
+                                spacing: 8
+
+                                RowLayout {
+                                    Layout.fillWidth: true
+
+                                    Text {
+                                        text: "Стать опорной Нодой сети (P2P Relay)"
+                                        color: coreVisual.textMain
+                                        font.family: coreTypography.fontFamilyMain
+                                        font.pixelSize: 14
+                                        font.bold: true
+                                        Layout.fillWidth: true
+                                    }
+
+                                    Switch {
+                                        id: nodeSwitch
+                                        checked: false
+                                    }
+                                }
+
+                                Text {
+                                    Layout.fillWidth: true
+                                    wrapMode: Text.WordWrap
+                                    color: coreVisual.messageTheir
+                                    font.family: coreTypography.fontFamilyMain
+                                    font.pixelSize: 12
+                                    text: "Условия: выделение до 512 МБ диска под зашифрованный транзитный буфер Kademlia DHT и фоновая маршрутизация пакетов (нагрузка на CPU ~0.0% через epoll/IOCP).\n" +
+                                          "Польза: ваш узел получает высокий рейтинг в Web of Trust, приоритетный канал передачи файлов и освобождается от вычисления SHA-256 Proof-of-Work (нулевая задержка при отправке сообщений)."
+                                }
+                            }
+                        }
+
+                        Button {
+                            id: registerButton
+                            text: root.isChecking ? "Генерация ключей и шифрование..." : "Создать профиль"
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 52
+                            Layout.topMargin: 12
+
+                            enabled: !root.isChecking &&
+                                     usernameField.acceptableInput &&
+                                     emailField.acceptableInput &&
+                                     passwordField.text.length >= 8 &&
+                                     passwordField.text === confirmPasswordField.text &&
+                                     (phoneField.text === "" || phoneField.acceptableInput)
+
+                            onClicked: {
+                                windowStack.push(mainChatScreen)
+                            }
+
+                            contentItem: Text {
+                                text: parent.text
+                                color: coreVisual.bgMain
+                                font.family: coreTypography.fontFamilyMain
+                                font.pixelSize: 15
+                                font.bold: true
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                            }
+
+                            background: Rectangle {
+                                color: parent.enabled ? coreVisual.messageOur : coreVisual.messageTheir
+                                radius: coreVisual.baseRadius
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // ЭКРАН 3: Рабочее пространство чатов и ИИ-агентов (Хранение в ОЗУ)
+    Component {
+        id: mainChatScreen
+
+        Rectangle {
+            id: chatScreenRoot
+            anchors.fill: parent
+            color: "transparent"
+
+            // Индекс открытого для общения чата (-1 = не выбран)
+            property int currentChatIndex: -1
+            // Флаг отображения формы создания/редактирования агента
+            property bool isCreatingAgent: true
+            // Индекс редактируемого агента (-1 = создание нового, >= 0 = редактирование существующего)
+            property int editingChatIndex: -1
+
+            // Оперативная память списка чатов (живет в RAM)
+            ListModel {
+                id: agentsModel
+            }
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.topMargin: 32 // Отступ под высоту шапки окна customHeader
+                spacing: 1
+
+                // === ЛЕВАЯ КОЛОНКА: СПИСОК ЧАТОВ ===
+                Rectangle {
+                    Layout.fillHeight: true
+                    Layout.preferredWidth: Math.min(Math.max(root.width * 0.26, 260), 380)
+                    color: coreVisual.bgPanel
+
+                    ColumnLayout {
+                        anchors.fill: parent
+                        spacing: 0
+
+                        // Верхняя панель с кнопкой "+ ИИ Агент"
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 54
+                            color: "transparent"
+
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: 14
+                                anchors.rightMargin: 14
+
+                                Text {
+                                    text: "Чаты и ИИ"
+                                    color: coreVisual.textMain
+                                    font.family: coreTypography.fontFamilyMain
+                                    font.pixelSize: 16
+                                    font.bold: true
+                                    Layout.fillWidth: true
+                                }
+
+                                Button {
+                                    text: "+ ИИ Агент"
+                                    Layout.preferredHeight: 32
+                                    Layout.preferredWidth: 96
+
+                                    onClicked: {
+                                        chatScreenRoot.editingChatIndex = -1
+                                        newAgentNameField.text = ""
+                                        newBaseUrlField.text = "https://api.openai.com/v1"
+                                        newApiKeyField.text = ""
+                                        newModelField.text = "gpt-4o-mini"
+                                        chatScreenRoot.isCreatingAgent = true
+                                    }
+
+                                    contentItem: Text {
+                                        text: parent.text
+                                        color: coreVisual.bgMain
+                                        font.family: coreTypography.fontFamilyMain
+                                        font.pixelSize: 12
+                                        font.bold: true
+                                        horizontalAlignment: Text.AlignHCenter
+                                        verticalAlignment: Text.AlignVCenter
+                                    }
+
+                                    background: Rectangle {
+                                        color: coreVisual.messageOur
+                                        radius: 8
+                                    }
+                                }
+                            }
+                        }
+
+                        // Разделительная линия (1px)
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 1
+                            color: coreVisual.bgMain
+                        }
+
+                        // Виртуализированный список чатов в ОЗУ
+                        ListView {
+                            id: agentsListView
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            clip: true
+                            model: agentsModel
+
+                            delegate: Rectangle {
+                                width: agentsListView.width
+                                height: 64
+                                color: (chatScreenRoot.currentChatIndex === index && !chatScreenRoot.isCreatingAgent)
+                                       ? "#1A10B981"
+                                       : "transparent"
+
+                                ColumnLayout {
+                                    anchors.fill: parent
+                                    anchors.margins: 12
+                                    spacing: 4
+
+                                    Text {
+                                        text: "🤖 " + model.agentName
+                                        color: coreVisual.textMain
+                                        font.family: coreTypography.fontFamilyMain
+                                        font.pixelSize: 14
+                                        font.bold: true
+                                        Layout.fillWidth: true
+                                        elide: Text.ElideRight
+                                    }
+
+                                    Text {
+                                        text: model.modelName + " • " + model.baseUrl
+                                        color: coreVisual.messageTheir
+                                        font.family: coreTypography.fontFamilyMain
+                                        font.pixelSize: 11
+                                        Layout.fillWidth: true
+                                        elide: Text.ElideRight
+                                    }
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    acceptedButtons: Qt.LeftButton | Qt.RightButton
+
+                                    onClicked: (mouse) => {
+                                        if (mouse.button === Qt.LeftButton) {
+                                            chatScreenRoot.currentChatIndex = index
+                                            chatScreenRoot.editingChatIndex = -1
+                                            chatScreenRoot.isCreatingAgent = false
+                                        } else if (mouse.button === Qt.RightButton) {
+                                            contextMenu.popup()
+                                        }
+                                    }
+                                }
+
+                                // Контекстное меню по нажатию ПКМ
+                                Menu {
+                                    id: contextMenu
+
+                                    background: Rectangle {
+                                        implicitWidth: 160
+                                        color: coreVisual.bgMain
+                                        radius: 8
+                                        border.color: coreVisual.messageTheir
+                                        border.width: 1
+                                    }
+
+                                    MenuItem {
+                                        text: "Редактировать"
+                                        contentItem: Text {
+                                            text: parent.text
+                                            color: coreVisual.textMain
+                                            font.family: coreTypography.fontFamilyMain
+                                            font.pixelSize: 13
+                                        }
+                                        background: Rectangle {
+                                            color: parent.highlighted ? "#1A10B981" : "transparent"
+                                            radius: 6
+                                        }
+                                        onTriggered: {
+                                            chatScreenRoot.editingChatIndex = index
+                                            newAgentNameField.text = model.agentName
+                                            newBaseUrlField.text = model.baseUrl
+                                            newApiKeyField.text = model.apiKey
+                                            newModelField.text = model.modelName
+                                            chatScreenRoot.isCreatingAgent = true
+                                        }
+                                    }
+
+                                    MenuItem {
+                                        text: "Удалить"
+                                        contentItem: Text {
+                                            text: parent.text
+                                            color: "#FB7185"
+                                            font.family: coreTypography.fontFamilyMain
+                                            font.pixelSize: 13
+                                        }
+                                        background: Rectangle {
+                                            color: parent.highlighted ? "#26FB7185" : "transparent"
+                                            radius: 6
+                                        }
+                                        onTriggered: {
+                                            if (chatScreenRoot.currentChatIndex === index) {
+                                                chatScreenRoot.currentChatIndex = -1
+                                                chatScreenRoot.isCreatingAgent = true
+                                            } else if (chatScreenRoot.currentChatIndex > index) {
+                                                chatScreenRoot.currentChatIndex -= 1
+                                            }
+                                            chatScreenRoot.editingChatIndex = -1
+                                            agentsModel.remove(index)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // === ПРАВАЯ КОЛОНКА: ФОРМА НАСТРОЙКИ АГЕНТА ИЛИ АКТИВНЫЙ ЧАТ ===
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    color: coreVisual.bgMain
+
+                    // Блок 1: Форма добавления / редактирования ИИ-агента в ОЗУ
+                    ColumnLayout {
+                        anchors.centerIn: parent
+                        width: Math.min(Math.max(parent.width * 0.5, 360), 540)
+                        spacing: 14
+                        visible: chatScreenRoot.isCreatingAgent
+
+                        Text {
+                            text: chatScreenRoot.editingChatIndex === -1 
+                                  ? "Подключение ИИ-Агента (В ОЗУ)" 
+                                  : "Редактирование ИИ-Агента"
+                            color: coreVisual.messageOur
+                            font.family: coreTypography.fontFamilyMain
+                            font.pixelSize: 20
+                            font.bold: true
+                            Layout.alignment: Qt.AlignHCenter
+                        }
+
+                        TextField {
+                            id: newAgentNameField
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 44
+                            placeholderText: "Имя чата (например: MSHP_Assistant)"
+                            placeholderTextColor: coreVisual.messageTheir
+                            color: coreVisual.textMain
+                            background: Rectangle { color: coreVisual.bgPanel; radius: coreVisual.baseRadius }
+                        }
+
+                        TextField {
+                            id: newBaseUrlField
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 44
+                            text: "https://api.openai.com/v1"
+                            placeholderText: "BASE_URL (например: https://api.openai.com/v1)"
+                            placeholderTextColor: coreVisual.messageTheir
+                            color: coreVisual.textMain
+                            background: Rectangle { color: coreVisual.bgPanel; radius: coreVisual.baseRadius }
+                        }
+
+                        TextField {
+                            id: newApiKeyField
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 44
+                            placeholderText: "API_KEY (токен доступа)"
+                            placeholderTextColor: coreVisual.messageTheir
+                            color: coreVisual.textMain
+                            echoMode: TextInput.Password
+                            passwordCharacter: "•"
+                            background: Rectangle { color: coreVisual.bgPanel; radius: coreVisual.baseRadius }
+                        }
+
+                        TextField {
+                            id: newModelField
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 44
+                            text: "gpt-4o-mini"
+                            placeholderText: "MODEL (например: gpt-4o-mini)"
+                            placeholderTextColor: coreVisual.messageTheir
+                            color: coreVisual.textMain
+                            background: Rectangle { color: coreVisual.bgPanel; radius: coreVisual.baseRadius }
+                        }
+
+                        Button {
+                            text: chatScreenRoot.editingChatIndex === -1 
+                                  ? "Добавить агента в список" 
+                                  : "Сохранить изменения"
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 48
+                            enabled: newAgentNameField.text !== "" && newBaseUrlField.text !== "" && newModelField.text !== ""
+
+                            onClicked: {
+                                var agentData = {
+                                    "agentName": newAgentNameField.text,
+                                    "baseUrl": newBaseUrlField.text,
+                                    "apiKey": newApiKeyField.text,
+                                    "modelName": newModelField.text
+                                }
+
+                                if (chatScreenRoot.editingChatIndex === -1) {
+                                    agentsModel.append(agentData)
+                                    chatScreenRoot.currentChatIndex = agentsModel.count - 1
+                                } else {
+                                    agentsModel.set(chatScreenRoot.editingChatIndex, agentData)
+                                    chatScreenRoot.currentChatIndex = chatScreenRoot.editingChatIndex
+                                }
+
+                                chatScreenRoot.editingChatIndex = -1
+                                chatScreenRoot.isCreatingAgent = false
+                            }
+
+                            contentItem: Text {
+                                text: parent.text
+                                color: coreVisual.bgMain
+                                font.family: coreTypography.fontFamilyMain
+                                font.pixelSize: 14
+                                font.bold: true
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                            }
+
+                            background: Rectangle {
+                                color: parent.enabled ? coreVisual.messageOur : coreVisual.messageTheir
+                                radius: coreVisual.baseRadius
+                            }
+                        }
+                    }
+
+                    /// Блок 2: Рабочая зона открытого чата
+                    ColumnLayout {
+                        anchors.fill: parent
+                        anchors.margins: 16
+                        spacing: 12
+                        visible: !chatScreenRoot.isCreatingAgent && chatScreenRoot.currentChatIndex >= 0
+
+                        // Шапка открытого чата
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Text {
+                                text: chatScreenRoot.currentChatIndex >= 0 && agentsModel.count > chatScreenRoot.currentChatIndex
+                                      ? "🤖 " + agentsModel.get(chatScreenRoot.currentChatIndex).agentName + 
+                                        " [" + agentsModel.get(chatScreenRoot.currentChatIndex).modelName + "]"
+                                      : ""
+                                color: coreVisual.messageOur
+                                font.family: coreTypography.fontFamilyMain
+                                font.pixelSize: 16
+                                font.bold: true
+                                Layout.fillWidth: true
+                            }
+                        }
+
+                        // Поле вывода истории переписки
+                        ScrollView {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            clip: true
+
+                            TextArea {
+                                id: chatHistoryArea
+                                readOnly: true
+                                wrapMode: TextArea.Wrap
+                                color: coreVisual.textMain
+                                font.family: coreTypography.fontFamilyMain
+                                font.pixelSize: 14
+                                text: chatScreenRoot.currentChatIndex >= 0 && agentsModel.count > chatScreenRoot.currentChatIndex
+                                      ? (agentsModel.get(chatScreenRoot.currentChatIndex).chatHistory || "")
+                                      : ""
+                                background: Rectangle {
+                                    color: coreVisual.bgPanel
+                                    radius: coreVisual.baseRadius
+                                }
+                            }
+                        }
+
+                        // Нижняя панель: Поле ввода текста + Кнопка отправки
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 10
+
+                            TextField {
+                                id: messageInputField
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 46
+                                placeholderText: root.isChecking ? "Ожидание ответа нейросети..." : "Введите запрос агенту..."
+                                placeholderTextColor: coreVisual.messageTheir
+                                color: coreVisual.textMain
+                                font.family: coreTypography.fontFamilyMain
+                                font.pixelSize: 14
+                                enabled: !root.isChecking
+
+                                onAccepted: sendMessageBtn.clicked()
+
+                                background: Rectangle {
+                                    color: coreVisual.bgPanel
+                                    radius: coreVisual.baseRadius
+                                    border.color: messageInputField.activeFocus ? coreVisual.messageOur : "transparent"
+                                    border.width: 1
+                                }
+                            }
+
+                            Button {
+                                id: sendMessageBtn
+                                text: root.isChecking ? "..." : "Отправить"
+                                Layout.preferredWidth: 120
+                                Layout.preferredHeight: 46
+                                enabled: !root.isChecking && messageInputField.text.trim() !== ""
+
+                                onClicked: {
+                                    var idx = chatScreenRoot.currentChatIndex
+                                    var agent = agentsModel.get(idx)
+                                    var userText = messageInputField.text.trim()
+                                    messageInputField.text = ""
+
+                                    // Дописываем вопрос пользователя в ОЗУ чата
+                                    var currentLog = agent.chatHistory || ""
+                                    agentsModel.setProperty(idx, "chatHistory", currentLog + "Вы: " + userText + "\n\n")
+
+                                    root.isChecking = true
+                                    settingsManager.sendMessageToAi(
+                                        agent.baseUrl,
+                                        agent.apiKey,
+                                        agent.modelName,
+                                        userText
+                                    )
+                                }
+
+                                contentItem: Text {
+                                    text: parent.text
+                                    color: coreVisual.bgMain
+                                    font.family: coreTypography.fontFamilyMain
+                                    font.pixelSize: 14
+                                    font.bold: true
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                }
+
+                                background: Rectangle {
+                                    color: parent.enabled ? coreVisual.messageOur : coreVisual.messageTheir
+                                    radius: coreVisual.baseRadius
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
 
     Connections {
         target: settingsManager 
-        
         function onAuthStateResolved(username, profilePath, validProfiles, corruptedProfiles, hasPin, isNode){
             if(hasPin){
                 //if user hasPin
@@ -421,13 +1056,28 @@ ApplicationWindow {
         function onRecoveryRequested(corruptedProfiles){
             //recovery requested
         }
+
         function onBackupPathValid(){
             root.isChecking = false
             windowStack.push(registrationFormScreen)
         }
+
         function onBackupPathInvalid(reason){
             root.isChecking = false
             root.errorMsg = reason 
+        }
+        
+        function onAiResponseReceived(answerText) {
+            root.isChecking = false
+            // Находим активный экран и дописываем ответ ИИ в буфер чата
+            if (windowStack.currentItem && windowStack.currentItem.currentChatIndex !== undefined) {
+                var item = windowStack.currentItem
+                var idx = item.currentChatIndex
+                if (idx >= 0) {
+                    var oldText = chatHistoryArea.text
+                    chatHistoryArea.text = oldText + "Агент: " + answerText + "\n────────────────────\n"
+                }
+            }
         }
     }
 }
